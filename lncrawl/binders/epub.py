@@ -42,7 +42,7 @@ def bind_epub_book(
     book.set_language(language)
     book.set_title(book_title)
     book.add_author(novel_author)
-    book.add_metadata('DC', 'description', novel_synopsis)
+    book.add_metadata("DC", "description", novel_synopsis)
     book.set_identifier(output_path + suffix)
     if is_rtl:
         book.set_direction("rtl")
@@ -128,6 +128,8 @@ def bind_epub_book(
         spine.append(synopsis_item)
     spine.append("nav")
 
+    referenced_images = set()
+
     for chapters in chapter_groups:
         first_chapter = chapters[0]
         volume_id = first_chapter.volume
@@ -167,6 +169,8 @@ def bind_epub_book(
             spine.append(chapter_item)
             volume_contents.append(chapter_item)
 
+            referenced_images.update(chapter.images)
+
         volume_section = epub.Section(volume_title, href=volume_item.file_name)
         toc.append([volume_section, volume_contents])
 
@@ -178,6 +182,8 @@ def bind_epub_book(
     logger.debug("Adding images")
     for image_path in images:
         filename = os.path.basename(image_path)
+        if not filename in referenced_images:
+            continue
         with open(image_path, "rb") as fp:
             image_item = epub.EpubImage()
             image_item.file_name = f"images/{filename}"
