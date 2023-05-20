@@ -1,6 +1,7 @@
 import atexit
 import logging
 import os
+import re
 import shutil
 from threading import Thread
 from typing import Dict, List, Optional, Tuple
@@ -183,11 +184,20 @@ class App:
         data = {}
         if self.pack_by_volume:
             for vol in self.crawler.volumes:
-                # filename_suffix = 'Volume %d' % vol['id']
-                filename_suffix = "Chapter %d-%d" % (
-                    vol["start_chapter"],
-                    vol["final_chapter"],
-                )
+                if vol["title"]:
+                    nice_title = re.sub("  +", " ", vol["title"].replace(":", " - "))
+                    parts = [re.sub("[^0-9]", "", x) for x in vol["title"].split(" ")]
+                    if str(vol["id"]) in parts:
+                        filename_suffix = nice_title
+                    else:
+                        filename_suffix = "Volume %d - %s" % (vol["id"], nice_title)
+                else:
+                    filename_suffix = "Volume %d" % vol["id"]
+
+                # filename_suffix = "Chapter %d-%d" % (
+                #     vol["start_chapter"],
+                #     vol["final_chapter"],
+                # )
                 data[filename_suffix] = [
                     x
                     for x in self.chapters
@@ -240,7 +250,7 @@ class App:
                     format="zip",
                     root_dir=root_dir,
                 )
-                logger.info("Compressed:", os.path.basename(archived_file))
+                logger.info("Compressed: %s", os.path.basename(archived_file))
 
             if archived_file:
                 self.archived_outputs.append(archived_file)
