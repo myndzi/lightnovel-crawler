@@ -123,18 +123,14 @@ class WanderingInnCrawler(Crawler):
                 el.insert_before(f"[[{nice_colorname}: ")
                 el.insert_after("]]")
 
+        return self.cleaner.extract_contents(body_parts)
+
+    def extract_chapter_images(self, chapter: Chapter) -> None:
+        # extract_chapter_images also rewrites the img src= attribute to point
+        # to the correct path in the epub archive
+        super().extract_chapter_images(chapter)
+
+        # ... so we have to do this here
         # etree.fromstring fails when the (unicode) content contains non-bmp unicode
         # replace any emojis and such with their equivalently-encoded html entity
-        res = self.cleaner.extract_contents(body_parts)
-        replaced = _nonbmp.sub(_nonbmp_to_entity, res)
-
-        return replaced
-
-    # keep superclass behavior, but prevent superclass method from
-    # undoing our encoding of non-bmp characters
-    def extract_chapter_images(self, chapter: Chapter) -> None:
-        body = chapter.body
-        super().extract_chapter_images(chapter)
-        # for some reason, the default implementation of this modifies
-        # body and undoes our encoding work above...
-        chapter.body = body
+        chapter.body = _nonbmp.sub(_nonbmp_to_entity, chapter.body)
